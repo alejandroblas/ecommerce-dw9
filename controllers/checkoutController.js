@@ -35,21 +35,24 @@ const checkoutController = {
       if (!req.session.cart || req.session.cart.items.length === 0)
         return res.redirect('/cart');
       const cart  = req.session.cart;
-      const order = await Order.create({
-        firstName: req.body.firstName, lastName:  req.body.lastName,
-        email:     req.body.email,     address:   req.body.address,
-        city:      req.body.city,      province:  req.body.province,
-        zip:       req.body.zip || '', phone:     req.body.phone,
-        total:     cart.totalPrice,    status:    'pending'
-      });
+   const order = await Order.create({
+  firstName: req.body.firstName, lastName:  req.body.lastName,
+  email:     req.body.email,     address:   req.body.address,
+  city:      req.body.city,      province:  req.body.province,
+  zip:       req.body.zip || '', phone:     req.body.phone,
+  total:     cart.totalPrice,    status:    'pending',
+  user_id:   req.session.userId || null   // null si el usuario no está autenticado
+});
+  
       for (const item of cart.items) {
-        await OrderItem.create({
-          OrderId:   order.id,
-          ProductId: item.product.id,
-          quantity:  item.quantity,
-          price:     item.product.price
-        });
-      }
+  await OrderItem.create({
+    order_id:   order.id,
+    product_id: item.product.id,
+    store_id:   item.product.store_id || null,
+    quantity:   item.quantity,
+    price:      item.product.price
+  });
+}
       req.session.pendingOrderId = order.id;
       // Renderiza la vista con los botones de PayPal
       res.render('payment', {

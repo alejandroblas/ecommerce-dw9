@@ -4,6 +4,7 @@ const sequelize     = require('../config/database');
 
 const Order = sequelize.define('Order', {
   id:        { type: DataTypes.INTEGER,        primaryKey: true, autoIncrement: true },
+  user_id: {type: DataTypes.INTEGER,allowNull: true,references: { model: 'users', key: 'id' }},
   firstName: { type: DataTypes.STRING,         allowNull: false },
   lastName:  { type: DataTypes.STRING,         allowNull: false },
   email:     { type: DataTypes.STRING,         allowNull: false },
