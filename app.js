@@ -1,15 +1,17 @@
 
 require('dotenv').config();
-const storeAuthRoutes = require('./routes/storeAuth');
-const { attachLocals } = require('./middleware/authMiddleware');
-const userAuthRoutes = require('./routes/userAuth');
+
 const express      = require('express');
 const path         = require('path');
 const session      = require('express-session');
 const cookieParser = require('cookie-parser');
 const ejsLayouts   = require('express-ejs-layouts');
 const sequelize    = require('./config/database');
+const storeAuthRoutes = require('./routes/storeAuth');
+const { attachLocals } = require('./middleware/authMiddleware');
+const userAuthRoutes = require('./routes/userAuth');
  const { Product, Order, OrderItem } = require('./models');
+ 
 
 const productRoutes  = require('./routes/products');
 const cartRoutes     = require('./routes/cart');
@@ -34,6 +36,12 @@ app.use(session({
   cookie: { maxAge: 3600000 }
 }));
 app.use(attachLocals);
+app.use(['/store/login', '/store/register',
+         '/user/login',  '/user/register',
+         '/store-admin', '/customer'],
+  (req, res, next) => { res.locals.layout = false; next(); }
+);
+app.use('/user', userAuthRoutes);
 // Middleware: carrito vacio en sesion si no existe
 app.use((req, res, next) => {
   if (!req.session.cart) {
@@ -42,16 +50,12 @@ app.use((req, res, next) => {
   res.locals.cartItemCount = req.session.cart.totalQty || 0;
   next();
 });
-app.use(['/store/login', '/store/register',
-         '/user/login',  '/user/register',
-         '/store-admin', '/customer'],
-  (req, res, next) => { res.locals.layout = false; next(); }
-);
+
  app.use('/',         productRoutes);
 app.use('/cart',     cartRoutes);
 app.use('/checkout', checkoutRoutes);
 app.use('/store', storeAuthRoutes);
-app.use('/user', userAuthRoutes);
+
 app.use((req, res) => {
   res.status(404).render('404', { title: 'Pagina no encontrada' });
 });
