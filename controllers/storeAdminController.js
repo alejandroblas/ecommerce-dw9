@@ -31,6 +31,7 @@ const listProducts = async (req, res) => {
   });
   res.render('store-admin/products', { layout: false, products });
 };
+
 // controllers/storeAdminController.js  (2/3) — CRUD productos
 const showNewProduct = (req, res) =>
   res.render('store-admin/product-form', { layout: false, product: null, error: null });
@@ -72,6 +73,7 @@ const deleteProduct = async (req, res) => {
   });
   res.redirect('/store-admin/products');
 };
+
 // controllers/storeAdminController.js  (3/3) — Ventas y settings
 const { sequelize } = require('../config/database');
 

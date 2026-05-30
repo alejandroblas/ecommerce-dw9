@@ -1,12 +1,15 @@
-// app.js — reemplaza el Hello World
+
 require('dotenv').config();
+const storeAuthRoutes = require('./routes/storeAuth');
+const { attachLocals } = require('./middleware/authMiddleware');
+const userAuthRoutes = require('./routes/userAuth');
 const express      = require('express');
 const path         = require('path');
 const session      = require('express-session');
 const cookieParser = require('cookie-parser');
 const ejsLayouts   = require('express-ejs-layouts');
 const sequelize    = require('./config/database');
-const { Product, Order, OrderItem } = require('./models');
+ const { Product, Order, OrderItem } = require('./models');
 
 const productRoutes  = require('./routes/products');
 const cartRoutes     = require('./routes/cart');
@@ -30,6 +33,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: { maxAge: 3600000 }
 }));
+app.use(attachLocals);
 // Middleware: carrito vacio en sesion si no existe
 app.use((req, res, next) => {
   if (!req.session.cart) {
@@ -38,19 +42,16 @@ app.use((req, res, next) => {
   res.locals.cartItemCount = req.session.cart.totalQty || 0;
   next();
 });
-/*
-app.get('/', (req, res) => {
-  res.send(`
-    Hello World - [Alejandro Blas]
-    La aplicacion funciona en Render.
-    Puerto: ${port} | Entorno: ${process.env.NODE_ENV || 'development'}
-  `);
-});
-*/
+app.use(['/store/login', '/store/register',
+         '/user/login',  '/user/register',
+         '/store-admin', '/customer'],
+  (req, res, next) => { res.locals.layout = false; next(); }
+);
  app.use('/',         productRoutes);
 app.use('/cart',     cartRoutes);
 app.use('/checkout', checkoutRoutes);
-
+app.use('/store', storeAuthRoutes);
+app.use('/user', userAuthRoutes);
 app.use((req, res) => {
   res.status(404).render('404', { title: 'Pagina no encontrada' });
 });
@@ -66,36 +67,3 @@ sequelize.sync()
     console.error('Error al sincronizar BD:', err.message);
     process.exit(1);
   });
-  // app.js — AGREGAR (1/4)
-
-// Imports — junto a los require existentes:
-const storeAuthRoutes = require('./routes/storeAuth');
-const { attachLocals } = require('./middleware/authMiddleware');
-
-// Después de app.use(session(...)):
-app.use(attachLocals);
-
-// Las vistas de auth y admin tienen su propio HTML completo con admin.css
-// y NO deben pasar por layout.ejs. Este middleware lo desactiva para esas rutas.
-app.use(['/store/login', '/store/register',
-         '/user/login',  '/user/register',
-         '/store-admin', '/customer'],
-  (req, res, next) => { res.locals.layout = false; next(); }
-);
-
-// Rutas — junto a los app.use() existentes:
-app.use('/store', storeAuthRoutes);
-// app.js — AGREGAR (2/4)
-
-// Import:
-const userAuthRoutes = require('./routes/userAuth');
-
-// Ruta (junto a las demás):
-app.use('/user', userAuthRoutes);
-// app.js — AGREGAR (3/4)
-
-// Import:
-const storeAdminRoutes = require('./routes/storeAdmin');
-
-// Ruta:
-app.use('/store-admin', storeAdminRoutes);

@@ -33,7 +33,6 @@ const register = async (req, res) => {
     res.render('store-auth/register', { layout: false, error: msg });
   }
 };
-
 // controllers/storeAuthController.js  (2/2) — Login y Logout
 
 // GET /store/login
