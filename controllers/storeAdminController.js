@@ -31,3 +31,91 @@ const listProducts = async (req, res) => {
   });
   res.render('store-admin/products', { layout: false, products });
 };
+// controllers/storeAdminController.js  (2/3) — CRUD productos
+const showNewProduct = (req, res) =>
+  res.render('store-admin/product-form', { layout: false, product: null, error: null });
+
+const createProduct = async (req, res) => {
+  const { name, description, price, stock, imageUrl } = req.body;
+  try {
+    await Product.create({
+      name, description, price, stock: stock || 0,
+      imageUrl: imageUrl || '/images/placeholder.png',
+      store_id: req.session.storeId
+    });
+    res.redirect('/store-admin/products');
+  } catch (err) {
+    res.render('store-admin/product-form', { layout: false, product: null, error: 'Error al crear el producto.' });
+  }
+};
+
+const showEditProduct = async (req, res) => {
+  const product = await Product.findOne({
+    where: { id: req.params.id, store_id: req.session.storeId }
+  });
+  if (!product) return res.redirect('/store-admin/products');
+  res.render('store-admin/product-form', { layout: false, product, error: null });
+};
+
+const updateProduct = async (req, res) => {
+  const { name, description, price, stock, imageUrl } = req.body;
+  await Product.update(
+    { name, description, price, stock, imageUrl },
+    { where: { id: req.params.id, store_id: req.session.storeId } }
+  );
+  res.redirect('/store-admin/products');
+};
+
+const deleteProduct = async (req, res) => {
+  await Product.destroy({
+    where: { id: req.params.id, store_id: req.session.storeId }
+  });
+  res.redirect('/store-admin/products');
+};
+// controllers/storeAdminController.js  (3/3) — Ventas y settings
+const { sequelize } = require('../config/database');
+
+// GET /store-admin/orders
+const listOrders = async (req, res) => {
+  const items = await OrderItem.findAll({
+    where: { store_id: req.session.storeId },
+    include: [
+      { model: Order,   as: 'order'   },
+      { model: Product, as: 'product' }
+    ],
+    order: [['createdAt', 'DESC']],
+    limit: 50
+  });
+  // Agrupar items por orden
+  const ordersMap = {};
+  items.forEach(item => {
+    const oid = item.order_id;
+    if (!ordersMap[oid]) ordersMap[oid] = { order: item.order, items: [] };
+    ordersMap[oid].items.push(item);
+  });
+  const orders = Object.values(ordersMap);
+  res.render('store-admin/orders', { layout: false, orders });
+};
+
+// GET /store-admin/settings
+const showSettings = async (req, res) => {
+  const store = await Store.findByPk(req.session.storeId);
+  res.render('store-admin/settings', { layout: false, store, success: null, error: null });
+};
+
+// POST /store-admin/settings (actualizar paypal_email y datos de tienda)
+const updateSettings = async (req, res) => {
+  const { name, description, paypal_email } = req.body;
+  await Store.update(
+    { name, description, paypal_email },
+    { where: { id: req.session.storeId } }
+  );
+  const store = await Store.findByPk(req.session.storeId);
+  res.render('store-admin/settings', { layout: false, store, success: 'Configuracion actualizada.', error: null });
+};
+
+module.exports = {
+  dashboard, listProducts, showNewProduct, createProduct,
+  showEditProduct, updateProduct, deleteProduct,
+  listOrders, showSettings, updateSettings
+};

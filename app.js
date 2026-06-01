@@ -11,7 +11,8 @@ const storeAuthRoutes = require('./routes/storeAuth');
 const { attachLocals } = require('./middleware/authMiddleware');
 const userAuthRoutes = require('./routes/userAuth');
  const { Product, Order, OrderItem } = require('./models');
- 
+ const storeAdminRoutes = require('./routes/storeAdmin');
+ const customerRoutes = require('./routes/customer');
 
 const productRoutes  = require('./routes/products');
 const cartRoutes     = require('./routes/cart');
@@ -55,6 +56,9 @@ app.use((req, res, next) => {
 app.use('/cart',     cartRoutes);
 app.use('/checkout', checkoutRoutes);
 app.use('/store', storeAuthRoutes);
+app.use('/store-admin', storeAdminRoutes);
+app.use('/customer', customerRoutes);
+
 
 app.use((req, res) => {
   res.status(404).render('404', { title: 'Pagina no encontrada' });
